@@ -156,7 +156,10 @@ export function POIssuePage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {posPending.map((po) => (
-                      <tr key={po.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={po.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-4 py-3">
                           <Button
                             onClick={() => handleIssuePO(po)}
@@ -220,8 +223,6 @@ export function POIssuePage() {
                         <p className="font-medium">₹{po.rate}</p>
                       </div>
                     </div>
-
-
                   </div>
                 ))}
               </div>
