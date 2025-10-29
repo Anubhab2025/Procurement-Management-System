@@ -1,0 +1,357 @@
+"use client";
+
+import type React from "react";
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/modal";
+import { Eye, FileText } from "lucide-react";
+import { useProcurement } from "@/contexts/procurement-context";
+
+// Reusable Labeled Input
+function LabeledInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  disabled = false,
+  required = false,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <Input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full"
+      />
+    </div>
+  );
+}
+
+export function BillsPage() {
+  const [tab, setTab] = useState<"pending" | "history">("pending");
+  const { getRecordsByStage, updateRecord, moveRecordToStage: moveToStage } = useProcurement();
+
+  // Pending: from MRN Created
+  const pending = getRecordsByStage("mrn", "MRN Created");
+  // History: Submitted in Bills stage
+  const history = getRecordsByStage("bills", "Submitted");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<(typeof pending)[0] | null>(null);
+  const [formData, setFormData] = useState({
+    billNo: "",
+    amount: "",
+  });
+
+  const handleSubmitBill = (record: (typeof pending)[0]) => {
+    const defaultAmount = (record.quantity ?? 0) * (record.rate ?? 0);
+    setSelectedRecord(record);
+    setFormData({
+      billNo: "",
+      amount: defaultAmount ? String(defaultAmount) : "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedRecord) {
+      updateRecord(selectedRecord.id, {
+        billNo: formData.billNo,
+        dateSubmitted: new Date().toISOString().split("T")[0],
+        amount: Number(formData.amount || 0),
+        status: "Submitted" as const,
+      });
+      moveToStage(selectedRecord.id, "bills", "Submitted");
+      setIsModalOpen(false);
+      setSelectedRecord(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6 p-4 md:p-0">
+      {/* Header */}
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Submit Bills to Accounts</h2>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
+        <button
+          onClick={() => setTab("pending")}
+          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+            tab === "pending"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Pending ({pending.length})
+        </button>
+        <button
+          onClick={() => setTab("history")}
+          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+            tab === "history"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          History ({history.length})
+        </button>
+      </div>
+
+      {/* === PENDING TAB === */}
+      {tab === "pending" && (
+        <Card className="overflow-hidden">
+          {pending.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p className="text-lg font-medium">No pending bills</p>
+              <p className="text-sm mt-1">All MRN materials have been billed.</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        PO No.
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supplier
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {pending.map((record) => {
+                      const amount = record.amount ?? (record.quantity ?? 0) * (record.rate ?? 0);
+                      return (
+                        <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <Button
+                              onClick={() => handleSubmitBill(record)}
+                              className="bg-green-600 hover:bg-green-700 text-xs flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              Submit Bill
+                            </Button>
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{record.poNo}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{record.supplierName}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 font-medium">
+                            ₹{amount.toLocaleString("en-IN")}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-4 p-4">
+                {pending.map((record) => {
+                  const amount = record.amount ?? (record.quantity ?? 0) * (record.rate ?? 0);
+                  return (
+                    <div
+                      key={record.id}
+                      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">{record.poNo}</p>
+                          <p className="text-sm text-gray-600">{record.supplierName}</p>
+                        </div>
+                        <span className="text-xs font-medium text-yellow-800 bg-yellow-100 px-2.5 py-0.5 rounded-full">
+                          MRN Created
+                        </span>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-500">Bill Amount</p>
+                        <p className="font-bold text-green-700">₹{amount.toLocaleString("en-IN")}</p>
+                      </div>
+
+                      {/* Action Button First */}
+                      <Button
+                        onClick={() => handleSubmitBill(record)}
+                        className="w-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Submit Bill
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </Card>
+      )}
+
+      {/* === HISTORY TAB === */}
+      {tab === "history" && (
+        <Card className="overflow-hidden">
+          {history.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p className="text-lg font-medium">No bill history</p>
+              <p className="text-sm mt-1">Submitted bills will appear here.</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Action
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bill No.
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        PO No.
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supplier
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {history.map((record) => (
+                      <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <button className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm">
+                            <Eye className="w-4 h-4" />
+                            View
+                          </button>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{record.billNo}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{record.poNo}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{record.supplierName}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-green-700">
+                          ₹{record.amount.toLocaleString("en-IN")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                            {record.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-4 p-4">
+                {history.map((record) => (
+                  <div
+                    key={record.id}
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-semibold text-gray-900">{record.billNo}</p>
+                        <p className="text-sm text-gray-600">{record.poNo}</p>
+                      </div>
+                      <span className="text-xs font-medium text-green-800 bg-green-100 px-2.5 py-0.5 rounded-full">
+                        Submitted
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                      <div>
+                        <p className="text-gray-500">Supplier</p>
+                        <p className="font-medium">{record.supplierName}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Amount</p>
+                        <p className="font-medium text-green-700">₹{record.amount.toLocaleString("en-IN")}</p>
+                      </div>
+                    </div>
+
+                    {/* Action Button First */}
+                    <button className="w-full flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
+                      <Eye className="w-4 h-4" />
+                      View Bill
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+      )}
+
+      {/* === SUBMIT BILL MODAL === */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Submit Bill to Accounts"
+        className="max-w-lg w-full mx-4 sm:mx-auto"
+        backdropClassName="bg-black/30"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <LabeledInput label="PO No." value={selectedRecord?.poNo || ""} onChange={() => {}} disabled />
+          <LabeledInput label="Supplier" value={selectedRecord?.supplierName || ""} onChange={() => {}} disabled />
+
+          <LabeledInput
+            label="Bill No."
+            placeholder="e.g. BILL-001"
+            value={formData.billNo}
+            onChange={(e) => setFormData({ ...formData, billNo: e.target.value })}
+            required
+          />
+
+          <LabeledInput
+            label="Amount (₹)"
+            type="number"
+            placeholder="0"
+            value={formData.amount}
+            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            required
+          />
+
+          <div className="flex flex-col gap-3 sm:flex-row pt-2">
+            <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
+              Submit Bill
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
