@@ -223,6 +223,14 @@ export function POIssuePage() {
                         <p className="font-medium">₹{po.rate}</p>
                       </div>
                     </div>
+
+                    <Button
+                      onClick={() => handleIssuePO(po)}
+                      className="w-full bg-green-600 hover:bg-green-700 text-sm flex items-center justify-center gap-2 mt-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      Issue PO
+                    </Button>
                   </div>
                 ))}
               </div>

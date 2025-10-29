@@ -22,7 +22,7 @@ interface LayoutProps {
 
 export function Layout({ user, onLogout }: LayoutProps) {
   const [currentPage, setCurrentPage] = useState("dashboard")
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const renderPage = () => {
     switch (currentPage) {
@@ -66,7 +66,9 @@ export function Layout({ user, onLogout }: LayoutProps) {
         <main className="flex-1 overflow-auto">
           <div className="p-6">{renderPage()}</div>
         </main>
-        <footer className="bg-gray-900 text-gray-400 text-center py-3 text-sm">Powered by Botivate</footer>
+        <footer className="bg-gray-900 text-gray-400 text-center py-3 text-sm">
+          Powered by Botivate
+        </footer>
       </div>
     </div>
   )

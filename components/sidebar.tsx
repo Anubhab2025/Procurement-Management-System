@@ -226,13 +226,14 @@ export function Sidebar({
 
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow-lg"
+          className="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 transition-all duration-200 hover:scale-110 active:scale-95 shadow"
+          aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
           <div
             className="transition-transform duration-300"
             style={{ transform: isOpen ? "rotate(0deg)" : "rotate(180deg)" }}
           >
-            {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </div>
         </button>
       </div>
@@ -298,10 +299,10 @@ export function Sidebar({
       {/* Hamburger */}
       <button
         onClick={onToggle}
-        className="fixed top-4 left-4 z-50 p-2 bg-slate-800 rounded-lg shadow-lg hover:bg-slate-700 transition-colors"
+        className="fixed top-5 left-4 size-9 z-50 p-2 bg-slate-800 rounded-lg shadow-lg hover:bg-slate-700 transition-colors flex justify-center items-center"
         aria-label="Open menu"
       >
-        <Menu className="w-6 h-6 text-white" />
+        <Menu className=" size-7 text-white" />
       </button>
 
       {/* Backdrop + Drawer */}

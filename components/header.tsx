@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Menu, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 interface HeaderProps {
   user: { email: string; name: string } | null;
@@ -11,33 +10,46 @@ interface HeaderProps {
 
 export function Header({ user, onLogout, onMenuClick }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 sm:px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 sm:px-5">
+      {/* Left: Menu + Title */}
+      <div className="flex items-center gap-3 ">
         <button
           onClick={onMenuClick}
-          className="p-1.5 rounded-md hover:bg-gray-100 transition-colors lg:hidden"
-          aria-label="Open menu"
+          className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors lg:hidden"
+          aria-label="Toggle menu"
         >
-          <Menu size={22} />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
         </button>
-        <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">Procurement</h1>
+        <h1 className="text-base mb-3font-medium text-gray-900 sm:text-lg">
+          Procurement
+        </h1>
       </div>
 
+      {/* Right: User + Logout */}
       {user && (
-        <div className="flex items-center gap-2">
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-medium text-gray-800">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
-          </div>
-          <Button
+        <div className="flex items-center gap-1">
+          <span className="hidden text-sm font-medium text-gray-700 sm:inline">
+            {user.name}
+          </span>
+          <button
             onClick={onLogout}
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1.5 text-gray-700 hover:bg-gray-100"
+            className="p-1.5 rounded-md text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-colors"
+            aria-label="Logout"
           >
             <LogOut size={16} />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+          </button>
         </div>
       )}
     </header>
